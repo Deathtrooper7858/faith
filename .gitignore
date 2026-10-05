@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+saves/
+*.tmp
+
+# PyInstaller build files
+build/
+dist/
+
+# Android Buildozer files
+.buildozer/
+bin/

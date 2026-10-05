@@ -1,0 +1,2 @@
+pygame-ce>=2.5.0
+# También funciona con pygame clásico (>=2.1):  pip install pygame
