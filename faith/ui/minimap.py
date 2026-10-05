@@ -14,6 +14,7 @@ class Minimap:
     def __init__(self):
         self.surf = pygame.Surface((SIZE, SIZE))
         self.out = pygame.Surface((SIZE * SCALE, SIZE * SCALE))
+        self.view = pygame.Surface((SIZE * SCALE, SIZE * SCALE))
         self.row = 0
         self.center = (0, 0)
         self.next_center = (0, 0)
@@ -64,11 +65,10 @@ class Minimap:
         # desplazamiento suave: el mapa se pinta sobre `center`, el jugador se mueve sobre él
         ox = (ptx - self.center[0] - 0.5 + RADIUS) * SCALE
         oy = (pty - self.center[1] - 0.5 + RADIUS) * SCALE
-        view = pygame.Surface((size, size))
-        view.fill((10, 10, 14))
-        view.blit(self.out, (int(size / 2 - ox - SCALE / 2), int(size / 2 - oy - SCALE / 2)))
+        self.view.fill((10, 10, 14))
+        self.view.blit(self.out, (int(size / 2 - ox - SCALE / 2), int(size / 2 - oy - SCALE / 2)))
         # estructuras y minerales conocidos
-        surf.blit(view, (x, y))
+        surf.blit(self.view, (x, y))
         # jugador
         cx, cy = x + size // 2, y + size // 2
         pulse = 1 + int(time_s * 3) % 2

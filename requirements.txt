@@ -1,2 +1,7 @@
 pygame-ce>=2.5.0
 # También funciona con pygame clásico (>=2.1):  pip install pygame
+
+# Dependencias para ejecutar la suite de pruebas sin ventana gráfica (headless shim):
+# pip install numpy pillow
+numpy>=1.24.0
+pillow>=10.0.0

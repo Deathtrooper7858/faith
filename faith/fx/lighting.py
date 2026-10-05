@@ -63,6 +63,7 @@ def _glow(radius, color, intensity):
 class Lighting:
     def __init__(self):
         self.layer = pygame.Surface((S.SCREEN_W // SCALE + 2, S.SCREEN_H // SCALE + 2))
+        self.scaled_layer = pygame.Surface((S.SCREEN_W + SCALE * 2, S.SCREEN_H + SCALE * 2))
 
     def render(self, screen, cx, cy, amb, darkness, lights):
         """amb: color multiplicador ambiente. lights: [(x, y, radio, intensidad 0..255, (r,g,b))]"""
@@ -78,7 +79,10 @@ class Lighting:
                 continue
             g = _glow(rr, col, inten)
             lay.blit(g, (int(sx - rr), int(sy - rr)), special_flags=pygame.BLEND_RGB_ADD)
-        big = pygame.transform.smoothscale(lay, (S.SCREEN_W + SCALE * 2, S.SCREEN_H + SCALE * 2))
+        try:
+            big = pygame.transform.smoothscale(lay, (S.SCREEN_W + SCALE * 2, S.SCREEN_H + SCALE * 2), self.scaled_layer)
+        except TypeError:
+            big = pygame.transform.smoothscale(lay, (S.SCREEN_W + SCALE * 2, S.SCREEN_H + SCALE * 2))
         screen.blit(big, (0, 0), special_flags=pygame.BLEND_RGB_MULT)
 
 

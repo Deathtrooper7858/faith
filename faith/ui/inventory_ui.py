@@ -23,9 +23,15 @@ class InventoryUI:
         self.rows = []             # [(Rect, recipe)]
         self.tab_rects = []
         self.panel = pygame.Rect(0, 0, 0, 0)
+        self.close_btn = pygame.Rect(0, 0, 0, 0)
+        self.sort_btn = pygame.Rect(0, 0, 0, 0)
         self.hover_slot = None
         self.hover_recipe = None
         self.craft_flash = 0.0
+        self._dim_surface = pygame.Surface((S.SCREEN_W, S.SCREEN_H), pygame.SRCALPHA)
+        self._dim_surface.fill((4, 6, 14, 150))
+        self._char_frames = None
+        self._dim_icons = {}
 
     # ── apertura ──────────────────────────────────────────────────────────
     def show(self, game, chest=None, tab=None):
@@ -85,6 +91,7 @@ class InventoryUI:
             for c in range(S.HOTBAR_SLOTS):
                 self.slots.append((pygame.Rect(gx + c * STEP, hy, SLOT, SLOT), "inv", c))
         self.close_btn = pygame.Rect(self.panel.right - 44, self.panel.top + 14, 32, 32)
+        self.sort_btn = pygame.Rect(self.panel.right - 146, self.panel.top + 14, 94, 32)
 
     # ── acceso a contenedores ─────────────────────────────────────────────
     def _list(self, game, kind):
@@ -103,6 +110,14 @@ class InventoryUI:
         if e.type == pygame.KEYDOWN:
             if e.key in (pygame.K_ESCAPE, pygame.K_i, pygame.K_TAB, pygame.K_e):
                 self.close(game)
+                return True
+            if e.key == pygame.K_r:
+                if self.chest is not None:
+                    from ..inventory import compact_and_sort
+                    compact_and_sort(self.chest.items)
+                else:
+                    game.player.inv.sort_bag()
+                audio.play("click", 0.45)
                 return True
             if pygame.K_1 <= e.key <= pygame.K_8 and self.hover_slot and self.hover_slot[1] != "armor":
                 idx = e.key - pygame.K_1
@@ -128,6 +143,14 @@ class InventoryUI:
     def _click(self, pos, button, game):
         if hasattr(self, "close_btn") and self.close_btn.collidepoint(pos):
             self.close(game)
+            return
+        if hasattr(self, "sort_btn") and self.sort_btn.collidepoint(pos):
+            if self.chest is not None:
+                from ..inventory import compact_and_sort
+                compact_and_sort(self.chest.items)
+            else:
+                game.player.inv.sort_bag()
+            audio.play("click", 0.45)
             return
         inv = game.player.inv
         keys = pygame.key.get_pressed()
@@ -209,19 +232,33 @@ class InventoryUI:
         audio.play("click", 0.35)
 
     # ── dibujo ────────────────────────────────────────────────────────────
+    def _dim_icon(self, item_id, size):
+        key = (item_id, size)
+        ic = self._dim_icons.get(key)
+        if ic is None:
+            base = items.icon(item_id, size)
+            ic = base.copy()
+            ic.set_alpha(150)
+            if len(self._dim_icons) > 120:
+                self._dim_icons.clear()
+            self._dim_icons[key] = ic
+        return ic
+
     def draw(self, surf, game, dt):
         p = game.player
         inv = p.inv
         self.craft_flash = max(0.0, self.craft_flash - dt)
-        dim = pygame.Surface((S.SCREEN_W, S.SCREEN_H), pygame.SRCALPHA)
-        dim.fill((4, 6, 14, 150))
-        surf.blit(dim, (0, 0))
+        surf.blit(self._dim_surface, (0, 0))
         W.panel(surf, self.panel, 238, 16)
+        mouse = pygame.mouse.get_pos()
         if hasattr(self, "close_btn"):
-            hov_x = self.close_btn.collidepoint(pygame.mouse.get_pos())
+            hov_x = self.close_btn.collidepoint(mouse)
             W.panel(surf, self.close_btn, 220, 6, (180, 70, 70) if hov_x else (110, 50, 50), (40, 20, 20), shadow=False)
             W.text(surf, "X", self.close_btn.center, 22, (255, 230, 230), "center")
-        mouse = pygame.mouse.get_pos()
+        if hasattr(self, "sort_btn"):
+            hov_s = self.sort_btn.collidepoint(mouse)
+            W.panel(surf, self.sort_btn, 220, 6, (90, 100, 140) if hov_s else (48, 54, 76), (24, 28, 40), shadow=False)
+            W.text(surf, "Ordenar [R]", self.sort_btn.center, 18, S.C_TEXT if not hov_s else S.C_GOLD, "center")
         self.hover_slot = None
         self.hover_recipe = None
         pr = self.panel
@@ -256,10 +293,10 @@ class InventoryUI:
         if self.chest is None:
             self._draw_crafting(surf, game, mouse)
             W.text(surf, f"Defensa total: {inv.defense()}", (132, 150 + 4 * (SLOT + 10) + 6), 24, (160, 220, 160))
-            W.text(surf, "Clic: coger/soltar · Clic der.: dividir · Mayús+clic: mover/equipar · 1-8: atajo",
+            W.text(surf, "Clic: coger/soltar · Clic der.: dividir · Mayús+clic: mover/equipar · 1-8: atajo · R: ordenar",
                    (pr.x + 24, pr.bottom - 30), 19, S.C_DIM)
         else:
-            W.text(surf, "Mayús+clic: mover rápido · 1-8: atajo a la barra", (pr.x + 22, pr.bottom - 30), 19, S.C_DIM)
+            W.text(surf, "Mayús+clic: mover rápido · 1-8: atajo a la barra · R: ordenar", (pr.x + 22, pr.bottom - 30), 19, S.C_DIM)
         # cursor con pila
         if inv.cursor:
             ic = items.icon(inv.cursor.id, 40)
@@ -294,12 +331,16 @@ class InventoryUI:
         W.tooltip(surf, lines, mouse)
 
     def _draw_character(self, surf, p):
-        F = P.frames()
-        img = F.base[(P.ROW_IDLE["down"], int(pygame.time.get_ticks() / 260) % 6)]
-        big = pygame.transform.scale(img, (192, 192))
+        if self._char_frames is None:
+            F = P.frames()
+            self._char_frames = [
+                pygame.transform.scale(F.base[(P.ROW_IDLE["down"], i)], (192, 192))
+                for i in range(6)
+            ]
+        fr = int(pygame.time.get_ticks() / 260) % 6
+        big = self._char_frames[fr]
         cx, cy = 132 + 150, 176
-        surf.blit(big, (cx - 96 + 0, cy + 50))
-        
+        surf.blit(big, (cx - 96, cy + 50))
 
     def _draw_crafting(self, surf, game, mouse):
         p = game.player
@@ -336,9 +377,7 @@ class InventoryUI:
                 fill = (56, 84, 60) if can else (42, 46, 64)
             pygame.draw.rect(surf, fill, rect, border_radius=8)
             pygame.draw.rect(surf, (96, 170, 100) if can else (66, 70, 96), rect, 2, border_radius=8)
-            ic = items.icon(rec.result, 38)
-            if not can:
-                ic = ic.copy(); ic.set_alpha(150)
+            ic = items.icon(rec.result, 38) if can else self._dim_icon(rec.result, 38)
             surf.blit(ic, (rect.x + 8, rect.y + (rect.h - ic.get_height()) // 2))
             nm = ITEMS[rec.result].name + (f"  x{rec.count}" if rec.count > 1 else "")
             W.text(surf, nm, (rect.x + 56, rect.y + 6), 21, S.C_TEXT if st_ok else (140, 130, 120))

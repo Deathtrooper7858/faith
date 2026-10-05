@@ -47,6 +47,48 @@ class TouchControls:
         self.pressed = set()
         self.attack_held = False
 
+        self._init_surfaces()
+
+    def _init_surfaces(self):
+        # Base joystick
+        d = self.joy_radius * 2 + 10
+        self._base_surf = pygame.Surface((d, d), pygame.SRCALPHA)
+        c = self.joy_radius + 5
+        pygame.draw.circle(self._base_surf, (20, 24, 38, 120), (c, c), self.joy_radius)
+        pygame.draw.circle(self._base_surf, (80, 90, 130, 180), (c, c), self.joy_radius, 3)
+
+        # Knob joystick (activo vs inactivo)
+        kd = self.knob_radius * 2 + 6
+        kc = self.knob_radius + 3
+        self._knob_active = pygame.Surface((kd, kd), pygame.SRCALPHA)
+        pygame.draw.circle(self._knob_active, (255, 214, 92, 220), (kc, kc), self.knob_radius)
+        pygame.draw.circle(self._knob_active, (255, 255, 255, 200), (kc, kc), self.knob_radius, 2)
+
+        self._knob_idle = pygame.Surface((kd, kd), pygame.SRCALPHA)
+        pygame.draw.circle(self._knob_idle, (140, 150, 180, 160), (kc, kc), self.knob_radius)
+        pygame.draw.circle(self._knob_idle, (255, 255, 255, 200), (kc, kc), self.knob_radius, 2)
+
+        # Botones de acción: pre-renderizar por estado
+        self._btn_surfs = {}
+        for btn in self.buttons:
+            bid = btn["id"]
+            for is_down in (False, True):
+                for is_focus in ((False, True) if bid == "interact" else (False,)):
+                    col = btn["color"]
+                    br = btn["r"]
+                    if is_focus:
+                        col = (60, 230, 120)
+                        br = int(br * 1.1)
+                    bd = br * 2 + 8
+                    bc = br + 4
+                    bsurf = pygame.Surface((bd, bd), pygame.SRCALPHA)
+                    fill_a = 210 if is_down else 135
+                    fill_col = (*col[:3], fill_a)
+                    edge_col = (255, 255, 255, 230) if is_down else (*col[:3], 210)
+                    pygame.draw.circle(bsurf, fill_col, (bc, bc), br)
+                    pygame.draw.circle(bsurf, edge_col, (bc, bc), br, 3 if is_down else 2)
+                    self._btn_surfs[(bid, is_down, is_focus)] = (bsurf, br)
+
     def handle_event(self, e, game):
         # Auto-activar si se detecta cualquier toque en pantalla
         if not self.enabled and hasattr(pygame, "FINGERDOWN") and e.type == pygame.FINGERDOWN:
@@ -202,24 +244,14 @@ class TouchControls:
 
         # ── 1. Dibujar Joystick ──────────────────────────────────────────
         jx, jy = self.joy_center
-        # Base exterior
-        base_surf = pygame.Surface((self.joy_radius * 2 + 10, self.joy_radius * 2 + 10), pygame.SRCALPHA)
-        pygame.draw.circle(base_surf, (20, 24, 38, 120), (self.joy_radius + 5, self.joy_radius + 5), self.joy_radius)
-        pygame.draw.circle(base_surf, (80, 90, 130, 180), (self.joy_radius + 5, self.joy_radius + 5), self.joy_radius, 3)
-        # Línea directriz
+        surf.blit(self._base_surf, (jx - self.joy_radius - 5, jy - self.joy_radius - 5))
         if self.joy_finger:
             kx, ky = self.knob_pos
-            pygame.draw.line(base_surf, (255, 214, 92, 160), 
-                             (self.joy_radius + 5, self.joy_radius + 5),
-                             (int(kx - jx + self.joy_radius + 5), int(ky - jy + self.joy_radius + 5)), 2)
-        surf.blit(base_surf, (jx - self.joy_radius - 5, jy - self.joy_radius - 5))
+            pygame.draw.line(surf, (255, 214, 92, 160), (jx, jy), (int(kx), int(ky)), 2)
 
         # Knob central
         kx, ky = int(self.knob_pos[0]), int(self.knob_pos[1])
-        knob_color = (255, 214, 92, 220) if self.joy_finger else (140, 150, 180, 160)
-        knob_surf = pygame.Surface((self.knob_radius * 2 + 6, self.knob_radius * 2 + 6), pygame.SRCALPHA)
-        pygame.draw.circle(knob_surf, knob_color, (self.knob_radius + 3, self.knob_radius + 3), self.knob_radius)
-        pygame.draw.circle(knob_surf, (255, 255, 255, 200), (self.knob_radius + 3, self.knob_radius + 3), self.knob_radius, 2)
+        knob_surf = self._knob_active if self.joy_finger else self._knob_idle
         surf.blit(knob_surf, (kx - self.knob_radius - 3, ky - self.knob_radius - 3))
 
         # Indicador de sprint si está activo
@@ -230,25 +262,15 @@ class TouchControls:
         for btn in self.buttons:
             bid = btn["id"]
             bx, by = btn["pos"]
-            br = btn["r"]
             is_down = bid in self.pressed
+            is_focus = (bid == "interact" and bool(game.focus))
 
-            # Si es botón de interacción y hay objeto cerca, resaltarlo
-            col = btn["color"]
-            if bid == "interact" and game.focus:
-                col = (60, 230, 120)
-                br = int(br * 1.1)
-
-            btn_surf = pygame.Surface((br * 2 + 8, br * 2 + 8), pygame.SRCALPHA)
-            fill_a = 210 if is_down else 135
-            fill_col = (*col[:3], fill_a)
-            edge_col = (255, 255, 255, 230) if is_down else (*col[:3], 210)
-
-            pygame.draw.circle(btn_surf, fill_col, (br + 4, br + 4), br)
-            pygame.draw.circle(btn_surf, edge_col, (br + 4, br + 4), br, 3 if is_down else 2)
-            surf.blit(btn_surf, (bx - br - 4, by - br - 4))
+            cached = self._btn_surfs.get((bid, is_down, is_focus))
+            if cached:
+                btn_surf, br = cached
+                surf.blit(btn_surf, (bx - br - 4, by - br - 4))
 
             # Texto del botón
-            txt_col = S.C_TEXT if not is_down else (255, 255, 255)
+            txt_col = (255, 255, 255) if is_down else S.C_TEXT
             font_size = 18 if len(btn["label"]) > 6 else 20
             W.text(surf, btn["label"], (bx, by), font_size, txt_col, "center")

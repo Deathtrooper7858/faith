@@ -2,6 +2,7 @@
 import math
 import random
 from .. import assets, items, audio
+from ..ui import widgets as W
 from ..util import dist
 
 _rng = random.Random()
@@ -71,7 +72,7 @@ class ItemDrop:
         surf.blit(sh, (int(sx - 11), int(sy - 3)))
         surf.blit(ic, (int(sx - ic.get_width() / 2), int(sy - ic.get_height() - 4 - self.z - 4 - bob)))
         if self.count > 1:
-            pass
+            W.text(surf, f"x{self.count}", (int(sx + 6), int(sy - 10 - self.z - bob)), 16, (255, 230, 140), "bottomleft")
 
 
 def scatter(level, x, y, item_id, count, spread=70.0, dur=None):

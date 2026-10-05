@@ -354,10 +354,18 @@ image = _Image()
 
 class _Transform:
     def scale(self, s, size, dest=None):
-        return _from_img(_to_img(s).resize((max(1, int(size[0])), max(1, int(size[1]))), Image.NEAREST), s.flags)
+        res = _from_img(_to_img(s).resize((max(1, int(size[0])), max(1, int(size[1]))), Image.NEAREST), s.flags)
+        if dest is not None:
+            dest.a[...] = res.a
+            return dest
+        return res
 
     def smoothscale(self, s, size, dest=None):
-        return _from_img(_to_img(s).resize((max(1, int(size[0])), max(1, int(size[1]))), Image.BILINEAR), s.flags)
+        res = _from_img(_to_img(s).resize((max(1, int(size[0])), max(1, int(size[1]))), Image.BILINEAR), s.flags)
+        if dest is not None:
+            dest.a[...] = res.a
+            return dest
+        return res
 
     def flip(self, s, fx, fy):
         a = s.a

@@ -172,6 +172,13 @@ class Inventory:
         self.selected = int(data.get("selected", 0)) % S.HOTBAR_SLOTS
 
 
+    def sort_bag(self):
+        """Ordena y compacta la mochila (sin tocar la barra rápida)."""
+        bag = self.slots[S.HOTBAR_SLOTS:]
+        compact_and_sort(bag)
+        self.slots[S.HOTBAR_SLOTS:] = bag
+
+
 # ═════════════════════════════════════════════════════════════════════════════
 # Operaciones de ranura (compartidas por inventario, cofres y armadura)
 # ═════════════════════════════════════════════════════════════════════════════
@@ -238,3 +245,38 @@ def quick_move(src, idx, dst_lists):
                 dst[j] = st
                 src[idx] = None
                 return
+
+
+def compact_and_sort(slots):
+    """Fusiona pilas incompletas y ordena por categoría/nombre manteniendo ranuras vacías al final."""
+    # 1. Fusionar pilas del mismo id que no estén llenas
+    for i in range(len(slots)):
+        s = slots[i]
+        if not s or s.max <= 1 or s.count >= s.max:
+            continue
+        for j in range(i + 1, len(slots)):
+            o = slots[j]
+            if o and o.id == s.id and (o.dur is None or o.dur == s.dur):
+                room = s.max - s.count
+                take = min(room, o.count)
+                s.count += take
+                o.count -= take
+                if o.count <= 0:
+                    slots[j] = None
+                if s.count >= s.max:
+                    break
+
+    # 2. Extraer no vacíos y ordenar
+    non_empty = [s for s in slots if s is not None]
+    cat_order = {"tool": 0, "armor": 1, "ammo": 2, "placeable": 3, "food": 4, "material": 5}
+
+    def _sort_key(st):
+        d = st.d
+        return (cat_order.get(d.kind, 9), d.name, -st.count)
+
+    non_empty.sort(key=_sort_key)
+
+    # 3. Reescribir la lista
+    for i in range(len(slots)):
+        slots[i] = non_empty[i] if i < len(non_empty) else None
+

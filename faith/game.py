@@ -55,6 +55,8 @@ class Game:
         self.flash_a = 0.0
         self.fade = 0.0
         self.fade_job = None
+        self._fade_surface = pygame.Surface((S.SCREEN_W, S.SCREEN_H))
+        self._flash_surface = pygame.Surface((S.SCREEN_W, S.SCREEN_H), pygame.SRCALPHA)
         self.autosave_t = S.AUTOSAVE_SECONDS
         self.death_t = 0.0
         self.grave_msg = ""
@@ -426,6 +428,14 @@ class Game:
         if e.type == pygame.QUIT:
             self.quit()
             return
+        if hasattr(pygame, "WINDOWFOCUSLOST") and e.type == pygame.WINDOWFOCUSLOST:
+            if self.state == "play" and not self.inv_ui.open:
+                self.state = "paused"
+            return
+        if hasattr(pygame, "ACTIVEEVENT") and e.type == pygame.ACTIVEEVENT and getattr(e, "gain", 1) == 0 and getattr(e, "state", 0) & 2:
+            if self.state == "play" and not self.inv_ui.open:
+                self.state = "paused"
+            return
         if self.show_controls:
             if e.type in (pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN) or (hasattr(pygame, "FINGERDOWN") and e.type == pygame.FINGERDOWN):
                 self.show_controls = False
@@ -596,15 +606,15 @@ class Game:
         else:
             self._draw_world(scr)
             if self.state == "dead":
-                menus.draw_death(scr, self.player, self.day, self.death_t, self.grave_msg)
+                menus.draw_death(scr, self.player, self.day, self.death_t, self.grave_msg, touch_enabled=self.touch.enabled)
             elif self.state == "paused":
                 self.pause_menu.draw(scr)
         if self.show_controls:
             menus.draw_controls(scr)
         if self.fade > 0:
-            f = pygame.Surface((S.SCREEN_W, S.SCREEN_H))
-            f.set_alpha(int(255 * self.fade))
-            scr.blit(f, (0, 0))
+            self._fade_surface.fill((0, 0, 0))
+            self._fade_surface.set_alpha(int(255 * self.fade))
+            scr.blit(self._fade_surface, (0, 0))
         if self.debug and self.state != "title":
             self._draw_debug(scr)
 
@@ -641,15 +651,12 @@ class Game:
         if held == "torch":
             f = 1 + 0.06 * math.sin(t * 9) + 0.04 * math.sin(t * 23)
             lights.append((p.x + p.fx * 10, p.y - 28, 270 * f, 215, (255, 190, 110)))
-        for pr in lv.projectiles:
-            pass
         self.lighting.render(scr, cx, cy, amb, dark, lights)
         lv.fx.draw_texts(scr, cx, cy)
         self.weather.draw(scr)
         if self.flash_a > 0 and self.flash_col:
-            ov = pygame.Surface((S.SCREEN_W, S.SCREEN_H), pygame.SRCALPHA)
-            ov.fill((*self.flash_col, int(self.flash_a)))
-            scr.blit(ov, (0, 0))
+            self._flash_surface.fill((*self.flash_col, int(self.flash_a)))
+            scr.blit(self._flash_surface, (0, 0))
         if self.state != "dead":
             self.hud.draw(scr, self)
             if self.inv_ui.open:

@@ -201,16 +201,24 @@ def _bake_rock(surf, level, tx, ty, px, py, h):
         pygame.draw.rect(surf, (36, 34, 42), (px + TS - 4, py, 4, TS))
 
 
+_cliff_shade_surf = None
+
+
+def _cliff_shade():
+    global _cliff_shade_surf
+    if _cliff_shade_surf is None:
+        s = pygame.Surface((TS, 12), pygame.SRCALPHA)
+        for k in range(12):
+            pygame.draw.rect(s, (0, 0, 0, 70 - k * 5), (0, k, TS, 1))
+        _cliff_shade_surf = s
+    return _cliff_shade_surf
+
+
 def _bake_edges(surf, level, t, tx, ty, px, py):
     solid = (T.ROCK, T.CAVE_DOOR, T.CAVE_WALL)
     # sombra proyectada por montañas hacia el sur
     if level.tile(tx, ty - 1) in solid:
-        shade = pygame.Surface((TS, 12), pygame.SRCALPHA)
-        for k in range(12):
-            pygame.draw.rect(shade, (0, 0, 0, 70 - k * 5), (0, k, TS, 1))
-        surf.blit(shade, (px, py))
-    if t == T.SAND and level.tile(tx, ty) == T.SAND:
-        pass
+        surf.blit(_cliff_shade(), (px, py))
     # borde oscuro de hierba contra arena/agua para dar definición
     if t == T.GRASS:
         for (dx, dy, rect) in ((0, -1, (0, 0, TS, 3)), (0, 1, (0, TS - 3, TS, 3)),

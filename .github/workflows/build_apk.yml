@@ -72,19 +72,19 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main'
         with:
-          tag_name: v1.0.1-android
-          name: "Faith of Surviving v1.0.1 (Android APK)"
+          tag_name: v1.0.2-android
+          name: "Faith of Surviving v1.0.2 (Android APK)"
           body: |
-            ## Faith of Surviving v1.0.1 - Android APK
+            ## Faith of Surviving v1.0.2 - Android APK
             
-            Versión optimizada con carga instantánea y corrección de descompresión de assets.
+            Nueva versión con actualizaciones de jugabilidad, inventario, iluminación y controles táctiles optimizados.
             
             - **Archivo:** `FaithOfSurviving.apk`
-            - **Mejoras v1.0.1:**
-              - Corrección del bloqueo de carga en pantalla inicial (extracción robusta de archivos zip/tar).
-              - Activación automática de audio y WebGL acelerado por hardware sin bloqueo táctil.
-              - Eliminación del retraso de consola de depuración en dispositivos móviles.
-              - Soporte completo para pantalla horizontal (Landscape) y joystick virtual.
+            - **Novedades en v1.0.2:**
+              - Nuevas mejoras en la interfaz de inventario y widgets interactivos.
+              - Actualizaciones de iluminación y renderizado de drops.
+              - Refinamiento de controles táctiles en pantalla y respuesta del joystick.
+              - Sistema de guardado y lógica de supervivencia mejorados.
             
             ### Instrucciones de instalación:
             1. Descarga el archivo `FaithOfSurviving.apk` en tu dispositivo Android.

@@ -10,7 +10,8 @@ CONTROLS = [
     ("Clic der.", "Guardia con escudo equipado"),
     ("E", "Interactuar: cofres, mesas, camas, puertas, agua, cuevas"),
     ("1 - 8 / Rueda", "Elegir objeto de la barra rápida"),
-    ("I / Tab", "Inventario y fabricación"), ("F", "Comer o beber lo que llevas en la mano"),
+    ("I / Tab", "Inventario y fabricación"), ("R", "Ordenar inventario / cofre"),
+    ("F", "Comer o beber lo que llevas en la mano"),
     ("Q", "Soltar el objeto en mano"), ("M", "Silenciar / activar sonido"),
     ("F3", "Datos de depuración"), ("F11", "Pantalla completa"), ("Esc", "Pausa"),
 ]
@@ -20,6 +21,21 @@ TIPS = ["Corta árboles con las manos para empezar; el hacha es mucho más rápi
         "Cocina la carne en un horno: la cruda te hace daño.",
         "Una cama te permite dormir la noche y fijar tu punto de reaparición.",
         "Un escudo reduce el 70 % del daño frontal si mantienes el clic derecho."]
+
+
+_dim_cache = {}
+
+
+def _dim(alpha, color=(4, 6, 14)):
+    key = (color, alpha)
+    s = _dim_cache.get(key)
+    if s is None:
+        if len(_dim_cache) > 40:
+            _dim_cache.clear()
+        s = pygame.Surface((S.SCREEN_W, S.SCREEN_H), pygame.SRCALPHA)
+        s.fill((*color, alpha))
+        _dim_cache[key] = s
+    return s
 
 
 class Title:
@@ -60,9 +76,7 @@ class Title:
         return False
 
     def draw(self, surf):
-        dim = pygame.Surface((S.SCREEN_W, S.SCREEN_H), pygame.SRCALPHA)
-        dim.fill((6, 8, 18, 120))
-        surf.blit(dim, (0, 0))
+        surf.blit(_dim(120, (6, 8, 18)), (0, 0))
         cx = S.SCREEN_W // 2
         bob = math.sin(self.t * 1.6) * 4
         W.text(surf, "FAITH", (cx, 120 + bob), 128, (255, 226, 130), "midtop")
@@ -113,9 +127,7 @@ class Pause:
         return False
 
     def draw(self, surf):
-        dim = pygame.Surface((S.SCREEN_W, S.SCREEN_H), pygame.SRCALPHA)
-        dim.fill((4, 6, 14, 170))
-        surf.blit(dim, (0, 0))
+        surf.blit(_dim(170, (4, 6, 14)), (0, 0))
         W.panel(surf, (S.SCREEN_W // 2 - 190, 145, 380, 395), 235, 16)
         W.text(surf, "Pausa", (S.SCREEN_W // 2, 158), 48, S.C_GOLD, "midtop")
         for b in self.buttons:
@@ -123,9 +135,7 @@ class Pause:
 
 
 def draw_controls(surf):
-    dim = pygame.Surface((S.SCREEN_W, S.SCREEN_H), pygame.SRCALPHA)
-    dim.fill((4, 6, 14, 200))
-    surf.blit(dim, (0, 0))
+    surf.blit(_dim(200, (4, 6, 14)), (0, 0))
     w, h = 800, 56 + len(CONTROLS) * 36 + 60
     x, y = (S.SCREEN_W - w) // 2, (S.SCREEN_H - h) // 2
     W.panel(surf, (x, y, w, h), 240, 16)
@@ -138,11 +148,9 @@ def draw_controls(surf):
     W.text(surf, "Pulsa cualquier tecla o haz clic para volver", (S.SCREEN_W // 2, y + h - 14), 22, S.C_DIM, "midbottom")
 
 
-def draw_death(surf, player, day, t, grave_msg):
+def draw_death(surf, player, day, t, grave_msg, touch_enabled=False):
     a = min(1.0, t / 1.2)
-    dim = pygame.Surface((S.SCREEN_W, S.SCREEN_H), pygame.SRCALPHA)
-    dim.fill((40, 0, 0, int(190 * a)))
-    surf.blit(dim, (0, 0))
+    surf.blit(_dim(int(190 * a) // 4 * 4, (40, 0, 0)), (0, 0))
     if a < 0.5:
         return
     k = min(1.0, (a - 0.5) * 2)
@@ -157,4 +165,5 @@ def draw_death(surf, player, day, t, grave_msg):
         if grave_msg:
             W.text(surf, grave_msg, (S.SCREEN_W // 2, 394), 24, S.C_GOLD, "midtop")
         if int(t * 2) % 2 == 0:
-            W.text(surf, "Pulsa ENTER para reaparecer", (S.SCREEN_W // 2, 470), 34, S.C_GOLD, "midtop")
+            prompt = "Toca la pantalla o pulsa ENTER para reaparecer" if touch_enabled else "Pulsa ENTER para reaparecer"
+            W.text(surf, prompt, (S.SCREEN_W // 2, 470), 34, S.C_GOLD, "midtop")

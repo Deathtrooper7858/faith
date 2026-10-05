@@ -59,13 +59,17 @@ def wrap(msg, size, width):
 
 
 def panel_surface(w, h, alpha=225, radius=12, border=S.C_PANEL_EDGE, fill=(18, 20, 30)):
-    key = (w, h, alpha, radius, border, fill)
+    w, h = int(w), int(h)
+    q_alpha = max(0, min(255, (int(alpha) // 16) * 16)) if alpha < 250 else int(alpha)
+    key = (w, h, q_alpha, radius, border, fill)
     s = _panels.get(key)
     if s is None:
+        if len(_panels) > 250:
+            _panels.clear()
         s = pygame.Surface((w, h), pygame.SRCALPHA)
-        pygame.draw.rect(s, (*fill, alpha), (0, 0, w, h), border_radius=radius)
+        pygame.draw.rect(s, (*fill, q_alpha), (0, 0, w, h), border_radius=radius)
         # degradado sutil superior
-        hl = pygame.Surface((w - 4, max(2, h // 5)), pygame.SRCALPHA)
+        hl = pygame.Surface((max(1, w - 4), max(2, h // 5)), pygame.SRCALPHA)
         hl.fill((255, 255, 255, 10))
         s.blit(hl, (2, 2))
         pygame.draw.rect(s, border, (0, 0, w, h), 2, border_radius=radius)
