@@ -10,6 +10,9 @@ saves/
 build/
 dist/
 
-# Android Buildozer files
+# Android Build files
 .buildozer/
 bin/
+node_modules/
+android/
+dist_apk/

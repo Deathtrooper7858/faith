@@ -39,21 +39,21 @@ jobs:
           pip install pygbag
           pygbag --build main.py
 
-      - name: Generate Native Android Project with Capacitor
+      - name: Install Capacitor and Setup Android Project
         run: |
-          npm init -y
-          npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
-          npx cap init "Faith of Surviving" "org.deathtrooper.faith" --web-dir "build/web"
-          npx cap add android
-          npx cap copy android
+          npm install
+          npx @capacitor/cli add android
+          npx @capacitor/cli copy android
 
       - name: Configure Android Manifest for Landscape and Fullscreen
         run: |
-          python -c '
+          python3 -c '
+          import os
           path = "android/app/src/main/AndroidManifest.xml"
-          content = open(path, "r", encoding="utf-8").read()
-          content = content.replace("<activity", "<activity android:screenOrientation=\"sensorLandscape\" android:theme=\"@android:style/Theme.NoTitleBar.Fullscreen\"")
-          open(path, "w", encoding="utf-8").write(content)
+          if os.path.exists(path):
+              content = open(path, "r", encoding="utf-8").read()
+              content = content.replace("<activity", "<activity android:screenOrientation=\"sensorLandscape\" android:theme=\"@android:style/Theme.NoTitleBar.Fullscreen\"")
+              open(path, "w", encoding="utf-8").write(content)
           '
 
       - name: Build APK with Gradle
@@ -62,12 +62,13 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: Rename APK for Clarity
+      - name: Copy and Rename APK for Distribution
         run: |
-          mv android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/debug/FaithOfSurviving.apk
+          mkdir -p dist_apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk dist_apk/FaithOfSurviving.apk
 
-      - name: Upload APK Artifact
+      - name: Upload Native APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: FaithOfSurviving-Android-APK
-          path: android/app/build/outputs/apk/debug/FaithOfSurviving.apk
+          path: dist_apk/FaithOfSurviving.apk
