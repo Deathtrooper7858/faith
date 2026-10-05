@@ -1,5 +1,12 @@
 {
   "appId": "org.deathtrooper.faith",
   "appName": "Faith of Surviving",
-  "webDir": "build/web"
+  "webDir": "build/web",
+  "server": {
+    "androidScheme": "https",
+    "allowNavigation": ["*"]
+  },
+  "android": {
+    "allowMixedContent": true
+  }
 }

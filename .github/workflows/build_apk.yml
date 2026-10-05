@@ -43,6 +43,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install pygbag
           pygbag --build main.py
+          python tools/patch_web.py
 
       - name: Sync Game Assets to Android Project
         run: |
@@ -71,18 +72,23 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main'
         with:
-          tag_name: v1.0.0-android
-          name: "Faith of Surviving v1.0.0 (Android APK)"
+          tag_name: v1.0.1-android
+          name: "Faith of Surviving v1.0.1 (Android APK)"
           body: |
-            ## Faith of Surviving - Android APK
+            ## Faith of Surviving v1.0.1 - Android APK
             
-            Descarga el archivo APK directamente a tu celular Android:
+            Versión optimizada con carga instantánea y corrección de descompresión de assets.
+            
             - **Archivo:** `FaithOfSurviving.apk`
-            - **Controles táctiles:** Joystick virtual analógico + botones táctiles de Ataque, Esquivar, Inventario, Comer e Interactuar integrados.
+            - **Mejoras v1.0.1:**
+              - Corrección del bloqueo de carga en pantalla inicial (extracción robusta de archivos zip/tar).
+              - Activación automática de audio y WebGL acelerado por hardware sin bloqueo táctil.
+              - Eliminación del retraso de consola de depuración en dispositivos móviles.
+              - Soporte completo para pantalla horizontal (Landscape) y joystick virtual.
             
             ### Instrucciones de instalación:
             1. Descarga el archivo `FaithOfSurviving.apk` en tu dispositivo Android.
-            2. Ábrelo y selecciona **Instalar**.
-            3. Si Android te solicita confirmación, activa **Permitir desde esta fuente** (Orígenes desconocidos).
-            4. ¡Abre el juego y juega en modo horizontal (Landscape)!
+            2. Ábrelo y selecciona **Instalar** (o **Actualizar** si ya tenías la versión anterior).
+            3. Si Android te solicita confirmación, activa **Permitir desde esta fuente**.
+            4. ¡Abre el juego y disfruta!
           files: dist_apk/FaithOfSurviving.apk
