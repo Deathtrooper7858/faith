@@ -7,8 +7,8 @@ on:
 
 jobs:
   build:
-    name: Build APK with Buildozer
-    runs-on: ubuntu-22.04
+    name: Build Native Android APK
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Repository
@@ -19,28 +19,55 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Install System Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y git zip unzip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev lld
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
 
-      - name: Install Buildozer and Dependencies
+      - name: Build WebAssembly Game with Pygbag
         run: |
           python -m pip install --upgrade pip
-          pip install Cython==0.29.36 buildozer virtualenv
+          pip install pygbag
+          pygbag --build main.py
 
-      - name: Build with Buildozer
+      - name: Generate Native Android Project with Capacitor
         run: |
-          yes | buildozer -v android debug
+          npm init -y
+          npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
+          npx cap init "Faith of Surviving" "org.deathtrooper.faith" --web-dir "build/web"
+          npx cap add android
+          npx cap copy android
+
+      - name: Configure Android Manifest for Landscape and Fullscreen
+        run: |
+          python -c '
+          path = "android/app/src/main/AndroidManifest.xml"
+          content = open(path, "r", encoding="utf-8").read()
+          content = content.replace("<activity", "<activity android:screenOrientation=\"sensorLandscape\" android:theme=\"@android:style/Theme.NoTitleBar.Fullscreen\"")
+          open(path, "w", encoding="utf-8").write(content)
+          '
+
+      - name: Build APK with Gradle
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Rename APK for Clarity
+        run: |
+          mv android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/debug/FaithOfSurviving.apk
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: FaithOfSurviving-APK
-          path: bin/*.apk
+          name: FaithOfSurviving-Android-APK
+          path: android/app/build/outputs/apk/debug/FaithOfSurviving.apk
