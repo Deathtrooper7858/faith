@@ -16,5 +16,6 @@ bin/
 node_modules/
 dist_apk/
 android/.gradle/
+android/.gradle-build/
 android/app/build/
 android/build/
