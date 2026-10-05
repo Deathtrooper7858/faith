@@ -45,6 +45,9 @@ android.api = 33
 # (int) Minimum API supported
 android.minapi = 21
 
+# (bool) Auto accept SDK license
+android.accept_sdk_license = True
+
 # (int) Android SDK version to use
 android.sdk = 33
 
