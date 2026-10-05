@@ -6,13 +6,15 @@ __pycache__/
 saves/
 *.tmp
 
-# PyInstaller build files
+# PyInstaller / Pygbag build files
 build/
 dist/
 
-# Android Build files
+# Android build outputs
 .buildozer/
 bin/
 node_modules/
-android/
 dist_apk/
+android/.gradle/
+android/app/build/
+android/build/

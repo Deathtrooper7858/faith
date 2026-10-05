@@ -39,30 +39,18 @@ jobs:
           pip install pygbag
           pygbag --build main.py
 
-      - name: Install Capacitor and Setup Android Project
+      - name: Sync Game Assets to Android Project
         run: |
           npm install
-          npx @capacitor/cli add android
           npx @capacitor/cli copy android
 
-      - name: Configure Android Manifest for Landscape and Fullscreen
-        run: |
-          python3 -c '
-          import os
-          path = "android/app/src/main/AndroidManifest.xml"
-          if os.path.exists(path):
-              content = open(path, "r", encoding="utf-8").read()
-              content = content.replace("<activity", "<activity android:screenOrientation=\"sensorLandscape\" android:theme=\"@android:style/Theme.NoTitleBar.Fullscreen\"")
-              open(path, "w", encoding="utf-8").write(content)
-          '
-
-      - name: Build APK with Gradle
+      - name: Build Native APK with Gradle
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug --stacktrace
 
-      - name: Copy and Rename APK for Distribution
+      - name: Copy and Rename APK
         run: |
           mkdir -p dist_apk
           cp android/app/build/outputs/apk/debug/app-debug.apk dist_apk/FaithOfSurviving.apk

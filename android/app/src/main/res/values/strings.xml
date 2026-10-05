@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Faith of Surviving</string>
+    <string name="title_activity_main">Faith of Surviving</string>
+    <string name="package_name">org.deathtrooper.faith</string>
+    <string name="custom_url_scheme">org.deathtrooper.faith</string>
+</resources>
