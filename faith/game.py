@@ -711,3 +711,15 @@ class Game:
             self.draw()
             pygame.display.flip()
         pygame.quit()
+
+    async def run_async(self):
+        import asyncio
+        while self.running:
+            dt = self.clock.tick(S.FPS) / 1000.0
+            for e in pygame.event.get():
+                self.handle_event(e)
+            self.update(dt)
+            self.draw()
+            pygame.display.flip()
+            await asyncio.sleep(0)
+        pygame.quit()

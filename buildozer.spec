@@ -21,58 +21,49 @@ source.include_dirs = assets, faith
 # (list) List of exclusions using pattern matching
 source.exclude_dirs = tests, docs, bin, .git, .github, dist, build, saves
 
-# (str) Application versioning (method 1)
+# (str) Application versioning
 version = 2.0.0
 
-# (list) Application requirements
-# comma separated e.g. requirements = sqlite3,kivy
-requirements = python3,pygame-ce
+# (list) Application requirements (usar 'pygame' para activar la receta oficial de SDL2 de p4a)
+requirements = python3,pygame
 
-# (str) Supported orientation (one of landscape, sensorLandscape, portrait or all)
+# (str) Bootstrap to use (sdl2 para pygame)
+p4a.bootstrap = sdl2
+
+# (str) Supported orientation
 orientation = landscape
 
-# (bool) Indicate if the application should be fullscreen to not
+# (bool) Indicate if the application should be fullscreen
 fullscreen = 1
 
 # (list) Permissions
 android.permissions = WAKE_LOCK
 
-# (int) Target Android API, should be as high as possible.
-android.api = 34
+# (int) Target Android API
+android.api = 33
 
-# (int) Minimum API your APK / AAB will support.
+# (int) Minimum API supported
 android.minapi = 21
 
 # (int) Android SDK version to use
-android.sdk = 34
+android.sdk = 33
 
 # (str) The Android NDK version to use
 android.ndk = 25b
 
-# (bool) Use --private data storage (True) or --dir public storage (False)
+# (bool) Use --private data storage
 android.private_storage = True
 
-# (list) List of Java .jar files to add to the libs so that pyjnius can access
-# their classes. Don't add jars that you do not need, since extra jars can slow
-# down the build process.
-# android.add_jars = foo.jar,bar.jar,path/to/more/*.jar
+# (list) The Android archs to build for (arm64-v8a es compatible con prácticamente todos los teléfonos modernos)
+android.archs = arm64-v8a
 
-# (list) The Android archs to build for, choices: armeabi-v7a, arm64-v8a, x86, x86_64
-android.archs = arm64-v8a, armeabi-v7a
-
-# (bool) enables Android auto backup feature (Android API >=23)
+# (bool) enables Android auto backup feature
 android.allow_backup = True
-
-# (list) Gradle dependencies to add
-# android.gradle_dependencies =
-
-# (bool) Skip byte compile for .py files
-# android.no-byte-compile-python = False
 
 [buildozer]
 
 # (int) Log level (0 = error only, 1 = info, 2 = debug when possible)
 log_level = 2
 
-# (int) Display warning if buildozer is run as root (0 = False, 1 = True)
+# (int) Display warning if buildozer is run as root
 warn_on_root = 1
