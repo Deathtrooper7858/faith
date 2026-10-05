@@ -5,6 +5,9 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Build Native Android APK
@@ -32,6 +35,8 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
+        with:
+          packages: 'platforms;android-34 build-tools;34.0.0 platform-tools'
 
       - name: Build WebAssembly Game with Pygbag
         run: |
@@ -42,13 +47,13 @@ jobs:
       - name: Sync Game Assets to Android Project
         run: |
           npm install
-          npx @capacitor/cli copy android
+          npx @capacitor/cli sync android
 
       - name: Build Native APK with Gradle
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --stacktrace
+          ./gradlew assembleDebug --stacktrace --no-daemon
 
       - name: Copy and Rename APK
         run: |
@@ -60,3 +65,24 @@ jobs:
         with:
           name: FaithOfSurviving-Android-APK
           path: dist_apk/FaithOfSurviving.apk
+          if-no-files-found: error
+
+      - name: Create GitHub Release with APK
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main'
+        with:
+          tag_name: v1.0.0-android
+          name: "Faith of Surviving v1.0.0 (Android APK)"
+          body: |
+            ## Faith of Surviving - Android APK
+            
+            Descarga el archivo APK directamente a tu celular Android:
+            - **Archivo:** `FaithOfSurviving.apk`
+            - **Controles táctiles:** Joystick virtual analógico + botones táctiles de Ataque, Esquivar, Inventario, Comer e Interactuar integrados.
+            
+            ### Instrucciones de instalación:
+            1. Descarga el archivo `FaithOfSurviving.apk` en tu dispositivo Android.
+            2. Ábrelo y selecciona **Instalar**.
+            3. Si Android te solicita confirmación, activa **Permitir desde esta fuente** (Orígenes desconocidos).
+            4. ¡Abre el juego y juega en modo horizontal (Landscape)!
+          files: dist_apk/FaithOfSurviving.apk
