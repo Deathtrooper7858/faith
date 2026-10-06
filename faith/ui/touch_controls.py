@@ -200,15 +200,38 @@ class TouchControls:
             self.move_vector = [0.0, 0.0]
             self.is_running = False
 
+    def is_touch_in_controls(self, pos):
+        if not self.enabled or not self.visible:
+            return False
+        # 1. Zona joystick (área inferior izquierda)
+        if pos[0] < S.SCREEN_W * 0.42 and pos[1] > S.SCREEN_H * 0.38:
+            return True
+        # 2. Botones de acción (esquina inferior derecha)
+        for btn in self.buttons:
+            bx, by = btn["pos"]
+            if math.hypot(pos[0] - bx, pos[1] - by) <= btn["r"] + 18:
+                return True
+        # 3. Botón pausa (esquina superior izquierda)
+        if pos[0] < 120 and pos[1] < 100:
+            return True
+        # 4. Botón mochila / minimapa (esquina superior derecha)
+        if pos[0] > S.SCREEN_W - 140 and pos[1] < 120:
+            return True
+        return False
+
     def _trigger_button(self, bid, game):
         p = game.player
         if not p:
             return
         if bid == "attack":
             self.attack_held = True
-            # Usar objeto hacia donde mira el jugador
-            wx = p.x + p.fx * 50
-            wy = p.y - 14 + p.fy * 50
+            # Usar objeto hacia el objetivo enfocado o hacia donde mira el jugador
+            if game.focus and game.focus[0] in ("object", "struct") and game.focus[1]:
+                fo = game.focus[1]
+                wx, wy = (fo.center() if game.focus[0] == "struct" else (fo.x, fo.y - 14))
+            else:
+                wx = p.x + p.fx * 50
+                wy = p.y - 14 + p.fy * 50
             p.use(game.level, wx, wy)
         elif bid == "interact":
             game.interact()
@@ -232,8 +255,12 @@ class TouchControls:
         if "attack" in self.pressed or self.attack_held:
             p = game.player
             if p and not game.inv_ui.open and not game.fade_job:
-                wx = p.x + p.fx * 50
-                wy = p.y - 14 + p.fy * 50
+                if game.focus and game.focus[0] in ("object", "struct") and game.focus[1]:
+                    fo = game.focus[1]
+                    wx, wy = (fo.center() if game.focus[0] == "struct" else (fo.x, fo.y - 14))
+                else:
+                    wx = p.x + p.fx * 50
+                    wy = p.y - 14 + p.fy * 50
                 p.use(game.level, wx, wy)
 
     def draw(self, surf, game):

@@ -494,6 +494,11 @@ class Game:
                     p.inv.select(i)
                     self._click_consumed = True
                     audio.play("click", 0.3)
+                    return
+            if self.touch.enabled and not hasattr(pygame, "FINGERDOWN"):
+                if not self.touch.is_touch_in_controls(e.pos):
+                    wx, wy = e.pos[0] + self.cam[0], e.pos[1] + self.cam[1]
+                    p.use(self.level, wx, wy)
         elif hasattr(pygame, "FINGERDOWN") and e.type == pygame.FINGERDOWN:
             fpos = (int(e.x * S.SCREEN_W), int(e.y * S.SCREEN_H))
             for i in range(S.HOTBAR_SLOTS):
@@ -501,6 +506,10 @@ class Game:
                     p.inv.select(i)
                     self._click_consumed = True
                     audio.play("click", 0.3)
+                    return
+            if self.touch.enabled and not self.touch.is_touch_in_controls(fpos):
+                wx, wy = fpos[0] + self.cam[0], fpos[1] + self.cam[1]
+                p.use(self.level, wx, wy)
 
     def _drop_held(self):
         p = self.player
@@ -549,11 +558,14 @@ class Game:
         wx, wy = mx + self.cam[0], my + self.cam[1]
         block = bool(buttons[2]) and not self.inv_ui.open
         p.update(dt, self.level, tuple(mv), run, block)
-        if buttons[0] and not self.inv_ui.open and not self.fade_job and not getattr(self, "_click_consumed", False):
-            if not any(hotbar_rect(i).collidepoint((mx, my)) for i in range(S.HOTBAR_SLOTS)):
-                p.use(self.level, wx, wy)
-        if not buttons[0]:
-            self._click_consumed = False
+        # Ataque continuo por ratón exclusivo para modo escritorio / PC sin táctil.
+        # En modo táctil, el ataque se gestiona con el botón ATACAR o toques directos fuera de controles.
+        if not self.touch.enabled:
+            if buttons[0] and not self.inv_ui.open and not self.fade_job and not getattr(self, "_click_consumed", False):
+                if not any(hotbar_rect(i).collidepoint((mx, my)) for i in range(S.HOTBAR_SLOTS)):
+                    p.use(self.level, wx, wy)
+            if not buttons[0]:
+                self._click_consumed = False
         snow = (not self.level.is_cave) and self.overworld.biome(p.x, p.y) == "snow"
         self.weather.update(dt, self.level.outdoors, snow)
         dark = self.level_darkness()

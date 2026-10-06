@@ -90,6 +90,38 @@ class TestTouchControls(unittest.TestCase):
         self.touch._on_touch_down(5, interact_btn["pos"], self.game)
         self.assertTrue(self.game.interacted)
 
+    def test_attack_isolation(self):
+        # Joystick no debe activar ataque
+        jx, jy = self.touch.joy_center
+        self.touch._on_touch_down(10, (jx + 30, jy), self.game)
+        self.assertFalse(self.game.player.used)
+        self.touch._on_touch_motion(10, (jx + 50, jy), self.game)
+        self.assertFalse(self.game.player.used)
+        self.touch._on_touch_up(10, (jx + 50, jy), self.game)
+
+        # Botones de no-ataque no deben activar ataque
+        for bid in ("dash", "eat", "inv", "interact", "pause"):
+            btn = next(b for b in self.touch.buttons if b["id"] == bid)
+            self.game.player.used = False
+            self.touch._on_touch_down(20, btn["pos"], self.game)
+            self.assertFalse(self.game.player.used, f"Button {bid} triggered attack!")
+            self.touch._on_touch_up(20, btn["pos"], self.game)
+
+        # Únicamente el botón de ataque debe activar ataque
+        attack_btn = next(b for b in self.touch.buttons if b["id"] == "attack")
+        self.touch._on_touch_down(30, attack_btn["pos"], self.game)
+        self.assertTrue(self.game.player.used)
+        self.touch._on_touch_up(30, attack_btn["pos"], self.game)
+        self.assertFalse(self.touch.attack_held)
+
+    def test_is_touch_in_controls(self):
+        jx, jy = self.touch.joy_center
+        self.assertTrue(self.touch.is_touch_in_controls((jx, jy)))
+        for btn in self.touch.buttons:
+            self.assertTrue(self.touch.is_touch_in_controls(btn["pos"]))
+        # Centro de la pantalla (área de juego en el mundo) no debe ser control táctil
+        self.assertFalse(self.touch.is_touch_in_controls((S.SCREEN_W // 2, S.SCREEN_H // 2)))
+
 
 if __name__ == "__main__":
     unittest.main()
