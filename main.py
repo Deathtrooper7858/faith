@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
+# /// script
+# dependencies = [
+#   "pygame-ce",
+# ]
+# ///
 """Faith of Surviving – punto de entrada."""
 import asyncio
 import os
 import sys
+import pygame
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

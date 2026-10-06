@@ -45,12 +45,30 @@ def _cat(*parts):
     return out
 
 
+def _make_sound(data):
+    import io
+    import wave
+    bio = io.BytesIO()
+    with wave.open(bio, "wb") as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)
+        wf.setframerate(RATE)
+        wf.writeframes(data.tobytes())
+    bio.seek(0)
+    return pygame.mixer.Sound(bio)
+
+
 def init():
     global _enabled
+    import sys
+    is_web = sys.platform == "emscripten" or "pygbag" in sys.modules
     try:
-        if pygame.mixer.get_init():
-            pygame.mixer.quit()               # reiniciar con el formato exacto de las muestras (mono, 22 kHz)
-        pygame.mixer.init(frequency=RATE, size=-16, channels=1, buffer=512)
+        if not pygame.mixer.get_init():
+            pygame.mixer.init(frequency=RATE, size=-16, channels=1, buffer=512)
+        elif not is_web:
+            # En desktop reiniciamos con el formato exacto de las muestras (mono, 22 kHz)
+            pygame.mixer.quit()
+            pygame.mixer.init(frequency=RATE, size=-16, channels=1, buffer=512)
         _enabled = bool(pygame.mixer.get_init())
     except Exception:
         _enabled = False
@@ -78,7 +96,13 @@ def init():
             "sleep": _cat(_synth(0.2, 392, 0, 3), _synth(0.3, 294, 0, 3)),
         }
         for name, data in defs.items():
-            _sounds[name] = pygame.mixer.Sound(buffer=data.tobytes())
+            try:
+                _sounds[name] = _make_sound(data)
+            except Exception:
+                try:
+                    _sounds[name] = pygame.mixer.Sound(buffer=data.tobytes())
+                except Exception:
+                    pass
     except Exception:
         _enabled = False
         _sounds.clear()
